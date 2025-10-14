@@ -3,7 +3,7 @@
         <div class="container mx-auto px-4 py-12 max-w-5xl">
             <!-- Header -->
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
                     <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                     </svg>
@@ -48,13 +48,23 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Data de Saída
                         </label>
-                        <input
-                            type="date"
+                        <VueDatePicker
                             v-model="form.travelDate"
-                            :min="minDate"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                            :class="{ 'border-red-500': errors.travelDate }"
-                        />
+                            :min-date="new Date()"
+                            :enable-time-picker="false"
+                            placeholder="Selecione a data de viagem"
+                            format="dd/MM/yyyy"
+                            locale="pt-BR"
+                            auto-apply
+                            :teleport="true"
+                            :class="{ 'dp-error': errors.travelDate }"
+                        >
+                            <template #input-icon>
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </template>
+                        </VueDatePicker>
                         <p v-if="errors.travelDate" class="mt-1 text-sm text-red-600">
                             {{ errors.travelDate }}
                         </p>
@@ -76,7 +86,7 @@
                     <button
                         type="submit"
                         :disabled="loading || !isFormValid"
-                        class="w-full bg-blue-600 text-white py-3.5 px-6 rounded-lg font-medium text-base hover:bg-blue-700 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
+                        class="w-full bg-primary-600 text-white py-3.5 px-6 rounded-lg font-medium text-base hover:bg-primary-700 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
                     >
                         <svg v-if="loading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -111,9 +121,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { useToast } from 'vue-toastification';
+import VueDatePicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 import CityAutocomplete from '../Components/CityAutocomplete.vue';
+import { useSearchCache } from '../composables/useSearchCache';
+
+const toast = useToast();
+const { getFromCache, cleanExpiredCache } = useSearchCache();
+
+// Limpa caches expirados ao montar o componente
+onMounted(() => {
+    cleanExpiredCache();
+});
 
 const form = ref({
     from: null,
@@ -165,6 +187,19 @@ const handleToError = (error) => {
     errors.value.to = error;
 };
 
+// Formata data para YYYY-MM-DD
+const formatDateToString = (date) => {
+    if (!date) return '';
+    if (typeof date === 'string') return date;
+
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+};
+
 // Submete o formulário
 const handleSearch = () => {
     // Limpa erros
@@ -193,24 +228,86 @@ const handleSearch = () => {
 
     if (form.value.from === form.value.to) {
         generalError.value = 'Origem e destino não podem ser iguais';
+        toast.error('Origem e destino não podem ser iguais');
         return;
     }
 
-    // Envia busca via POST (backend redireciona para GET com query params)
+    const dateString = formatDateToString(form.value.travelDate);
+
+    // Verifica se existe cache válido
+    const cachedData = getFromCache(form.value.from, form.value.to, dateString);
+
+    if (cachedData) {
+        // Usa dados do cache
+        toast.success(`Dados do cache carregados! (salvos às ${cachedData.cachedAt})`);
+
+        // Navega para página de resultados com dados em cache (via query params)
+        router.get('/search', {
+            from: form.value.from,
+            to: form.value.to,
+            data: dateString,
+            useCache: 'true'
+        });
+        return;
+    }
+
+    // Se não tem cache, faz requisição normal
     loading.value = true;
+    toast.info('Buscando viagens disponíveis...');
 
     router.post('/search', {
         from: form.value.from,
         to: form.value.to,
-        data: form.value.travelDate
+        data: dateString
     }, {
         onError: (errors) => {
             generalError.value = errors.message || 'Erro ao buscar viagens';
+            toast.error(errors.message || 'Erro ao buscar viagens');
             loading.value = false;
         },
         onFinish: () => {
             loading.value = false;
+        },
+        onSuccess: () => {
+            toast.success('Viagens encontradas!');
+            loading.value = true;
         }
     });
 };
 </script>
+
+<style>
+/* Customização VueDatePicker para Tailwind */
+.dp__theme_light {
+    --dp-primary-color: #4f46e5;  /* primary-600 */
+    --dp-primary-text-color: #ffffff;
+    --dp-secondary-color: #cbd5e1;
+    --dp-border-radius: 0.5rem;
+    --dp-font-family: inherit;
+}
+
+.dp__input {
+    padding: 0.75rem 2rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.dp__input:hover {
+    border-color: #9ca3af;
+}
+
+.dp__input:focus {
+    border-color: #4f46e5;  /* primary-600 */
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.dp-error .dp__input {
+    border-color: #ef4444;
+}
+
+.dp__input_icon {
+    padding-left: 0.5rem;
+}
+</style>

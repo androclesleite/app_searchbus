@@ -57,7 +57,7 @@
               </div>
               <div class="flex items-center gap-2">
                 <div
-                  class="w-10 h-10 bg-blue-600 border-2 border-blue-700 rounded"
+                  class="w-10 h-10 bg-primary-600 border-2 border-primary-700 rounded"
                 ></div>
                 <span class="text-sm text-gray-700">Selecionado</span>
               </div>
@@ -132,7 +132,7 @@
             <!-- Loader -->
             <div v-else class="text-center py-12">
               <div
-                class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+                class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
               ></div>
               <p class="mt-4 text-gray-600">Carregando assentos...</p>
             </div>
@@ -144,7 +144,7 @@
           <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
             <!-- Contador de seleção -->
             <div class="text-center mb-6 pb-6 border-b">
-              <div class="text-4xl font-bold text-blue-600 mb-2">
+              <div class="text-4xl font-bold text-primary-600 mb-2">
                 {{ selectedSeats.length }}/{{ maxPassengers || trip.availableSeats }}
               </div>
               <div class="text-sm text-gray-600">
@@ -170,7 +170,7 @@
                   :key="seat"
                   class="flex items-center justify-between bg-blue-50 px-3 py-2 rounded"
                 >
-                  <span class="font-semibold text-blue-700 text-sm">
+                  <span class="font-semibold text-primary-700 text-sm">
                     Poltrona {{ seat }}
                   </span>
                   <button
@@ -223,7 +223,7 @@
             <button
               @click="confirmSelection"
               :disabled="selectedSeats.length === 0 || loading"
-              class="w-full py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              class="w-full py-4 bg-primary-600 text-white rounded-lg font-bold text-lg hover:bg-primary-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               {{ loading ? "PROCESSANDO..." : "FECHAR" }}
             </button>
@@ -237,6 +237,9 @@
 <script setup>
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const props = defineProps({
   seats: Array,
@@ -275,7 +278,7 @@ const getSeatClass = (seat) => {
   }
 
   if (selectedSeats.value.includes(seat.seat)) {
-    return "bg-blue-600 border-2 border-blue-700 hover:bg-blue-700 cursor-pointer transform hover:scale-105";
+    return "bg-primary-600 border-2 border-primary-700 hover:bg-primary-700 cursor-pointer transform hover:scale-105";
   }
 
   if (isOccupied(seat)) {
@@ -293,16 +296,25 @@ const getSeatTooltip = (seat) => {
 };
 
 const toggleSeat = (seat) => {
-  if (!isSeatSelectable(seat)) return;
+  if (!isSeatSelectable(seat)) {
+    if (isOccupied(seat)) {
+      toast.warning('Este assento já está ocupado');
+    } else if (maxPassengers.value && selectedSeats.value.length >= maxPassengers.value) {
+      toast.warning(`Você atingiu o limite de ${maxPassengers.value} passageiro(s)`);
+    }
+    return;
+  }
 
   const seatNumber = seat.seat;
   const index = selectedSeats.value.indexOf(seatNumber);
 
   if (index > -1) {
     selectedSeats.value.splice(index, 1);
+    toast.info(`Poltrona ${seatNumber} removida`);
   } else {
     if (!maxPassengers.value || selectedSeats.value.length < maxPassengers.value) {
       selectedSeats.value.push(seatNumber);
+      toast.success(`Poltrona ${seatNumber} selecionada`);
     }
   }
 };
@@ -327,9 +339,13 @@ const goBack = () => {
 };
 
 const confirmSelection = () => {
-  if (selectedSeats.value.length === 0) return;
+  if (selectedSeats.value.length === 0) {
+    toast.warning('Selecione pelo menos um assento');
+    return;
+  }
 
   loading.value = true;
+  toast.info('Processando sua seleção...');
 
   router.post(
     "/seats",
@@ -342,6 +358,12 @@ const confirmSelection = () => {
       onFinish: () => {
         loading.value = false;
       },
+      onSuccess: () => {
+        toast.success('Assentos confirmados com sucesso!');
+      },
+      onError: () => {
+        toast.error('Erro ao confirmar os assentos. Tente novamente.');
+      }
     }
   );
 };

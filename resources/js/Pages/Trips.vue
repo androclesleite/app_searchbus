@@ -6,7 +6,7 @@
                 <div class="flex items-center justify-between flex-wrap gap-4">
                     <div class="flex items-center gap-4 flex-wrap">
                         <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
@@ -14,7 +14,7 @@
                         </div>
                         <span class="text-gray-400 font-medium">→</span>
                         <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
@@ -51,7 +51,7 @@
                             @click="selectedPeriod = selectedPeriod === period.value ? null : period.value"
                             class="px-4 py-2 rounded-lg border transition-all duration-200 text-sm font-medium"
                             :class="selectedPeriod === period.value
-                                ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                                ? 'border-primary-600 bg-primary-600 text-white shadow-sm'
                                 : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'"
                         >
                             {{ period.label }}
@@ -73,10 +73,16 @@
                 </div>
 
                 <!-- Contador de resultados -->
-                <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between flex-wrap gap-2">
                     <p class="text-gray-700 text-sm">
                         <strong class="font-semibold text-gray-900">{{ filteredTrips.length }}</strong> {{ filteredTrips.length === 1 ? 'viagem encontrada' : 'viagens encontradas' }}
                     </p>
+                    <div v-if="cacheInfo?.shouldCache" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span class="text-xs font-medium text-blue-700">Dados salvos em cache</span>
+                    </div>
                 </div>
             </div>
 
@@ -87,11 +93,11 @@
                     :key="trip.id"
                     class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden"
                 >
-                    <div class="p-6">
-                        <div class="flex items-start gap-6">
+                    <div class="p-4 sm:p-6">
+                        <div class="flex flex-col lg:flex-row items-start gap-4 lg:gap-6">
                             <!-- Logo da Companhia -->
-                            <div class="flex-shrink-0">
-                                <div class="w-24 h-16 flex items-center justify-center bg-gray-50 rounded border border-gray-200">
+                            <div class="flex-shrink-0 w-full lg:w-auto flex lg:flex-col items-center lg:items-start gap-3 lg:gap-0">
+                                <div class="w-20 h-14 sm:w-24 sm:h-16 flex items-center justify-center bg-gray-50 rounded border border-gray-200">
                                     <!-- Loading skeleton -->
                                     <div v-if="companyLogos[trip.company.id] === 'loading'" class="w-full h-full bg-gray-200 animate-pulse rounded"></div>
                                     <!-- Logo carregado -->
@@ -104,31 +110,31 @@
                                         loading="lazy"
                                     />
                                     <!-- Fallback icon -->
-                                    <svg v-else class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg v-else class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                                     </svg>
                                 </div>
-                                <div class="text-xs text-center text-gray-500 mt-1 truncate w-24">
+                                <div class="text-xs text-gray-500 lg:text-center lg:mt-1 flex-1 lg:flex-none lg:w-24 lg:truncate">
                                     {{ trip.company.name }}
                                 </div>
                             </div>
 
                             <!-- Informações da viagem -->
-                            <div class="flex-1 min-w-0">
+                            <div class="flex-1 min-w-0 w-full">
                                 <!-- Horários -->
-                                <div class="flex items-center gap-6 mb-4">
+                                <div class="flex items-center gap-3 sm:gap-6 mb-4">
                                     <div class="text-center">
-                                        <div class="text-3xl font-bold text-gray-800">
+                                        <div class="text-2xl sm:text-3xl font-bold text-gray-800">
                                             {{ formatTime(trip.departure.time) }}
                                         </div>
-                                        <div class="text-sm text-gray-500 mt-1">
+                                        <div class="text-xs sm:text-sm text-gray-500 mt-1">
                                             {{ formatShortLocation(trip.from.name) }}
                                         </div>
                                     </div>
 
                                     <div class="flex-1 flex flex-col items-center min-w-0">
-                                        <div class="text-xs text-gray-500 mb-1">
-                                            Duração: {{ formatDuration(trip.travelDuration) }}
+                                        <div class="text-xs text-gray-500 mb-1 text-center">
+                                            {{ formatDuration(trip.travelDuration) }}
                                         </div>
                                         <div class="w-full border-t-2 border-gray-300 relative">
                                             <div class="absolute right-0 top-1/2 transform -translate-y-1/2">
@@ -138,28 +144,28 @@
                                     </div>
 
                                     <div class="text-center">
-                                        <div class="text-3xl font-bold text-gray-800">
+                                        <div class="text-2xl sm:text-3xl font-bold text-gray-800">
                                             {{ formatTime(trip.arrival.time) }}
                                         </div>
-                                        <div class="text-sm text-gray-500 mt-1">
+                                        <div class="text-xs sm:text-sm text-gray-500 mt-1">
                                             {{ formatShortLocation(trip.to.name) }}
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Detalhes -->
-                                <div class="flex flex-wrap items-center gap-4 text-sm">
-                                    <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg font-medium border border-blue-100">
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                                    <span class="px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-50 text-primary-700 rounded-lg font-medium border border-blue-100">
                                         {{ trip.seatClass }}
                                     </span>
-                                    <div class="flex items-center gap-2 text-gray-600">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex items-center gap-1.5 sm:gap-2 text-gray-600">
+                                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                         </svg>
                                         <span>{{ trip.availableSeats }} disponíveis</span>
                                     </div>
-                                    <span v-if="trip.withBPE" class="flex items-center gap-1.5 text-green-600 font-medium">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <span v-if="trip.withBPE" class="flex items-center gap-1 sm:gap-1.5 text-green-600 font-medium">
+                                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                         </svg>
                                         Embarque direto
@@ -168,26 +174,24 @@
                             </div>
 
                             <!-- Preço e Ação -->
-                            <div class="flex-shrink-0 text-right">
-                                <div class="mb-3">
-                                    <div class="text-sm text-gray-500 mb-1">por pessoa</div>
-                                    <div class="text-3xl font-bold text-green-600">
+                            <div class="flex-shrink-0 w-full lg:w-auto lg:text-right flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-4 lg:gap-0 border-t lg:border-t-0 pt-4 lg:pt-0">
+                                <div class="lg:mb-3">
+                                    <div class="text-xs sm:text-sm text-gray-500 mb-1">por pessoa</div>
+                                    <div class="text-2xl sm:text-3xl font-bold text-green-600">
                                         R$ {{ formatPrice(trip.price.price) }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1 flex items-center justify-end gap-1">
+                                        <span>+ Taxa R$ {{ formatPrice(trip.price.taxPrice) }}</span>
                                     </div>
                                 </div>
 
                                 <button
                                     @click="selectTrip(trip)"
                                     :disabled="trip.availableSeats === 0"
-                                    class="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap shadow-sm hover:shadow-md"
+                                    class="px-6 py-2.5 sm:py-3 lg:w-full bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap shadow-sm hover:shadow-md text-sm sm:text-base"
                                 >
                                     {{ trip.availableSeats === 0 ? 'Esgotado' : 'Selecionar' }}
                                 </button>
-
-                                <div class="text-xs text-gray-500 mt-2 flex items-center justify-center gap-1">
-                                    <span>+</span>
-                                    <span>Taxa R$ {{ formatPrice(trip.price.taxPrice) }}</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -214,7 +218,7 @@
                 </p>
                 <button
                     @click="clearFilters"
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    class="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                     Limpar filtros
                 </button>
@@ -226,11 +230,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { useToast } from 'vue-toastification';
 import axios from 'axios';
+import { useSearchCache } from '../composables/useSearchCache';
+
+const toast = useToast();
+const { saveToCache } = useSearchCache();
 
 const props = defineProps({
     trips: Array,
-    searchParams: Object
+    searchParams: Object,
+    cacheInfo: Object
 });
 
 const selectedPeriod = ref(null);
@@ -267,6 +277,17 @@ const loadCompanyLogo = async (companyId) => {
 
 // Carrega logos das companhias visíveis
 onMounted(() => {
+    // Salva no cache se tiver dados válidos
+    if (props.cacheInfo?.shouldCache && props.trips?.length > 0) {
+        saveToCache(
+            props.cacheInfo.from,
+            props.cacheInfo.to,
+            props.cacheInfo.date,
+            props.trips,
+            props.searchParams
+        );
+    }
+
     const uniqueCompanies = [...new Set(props.trips.map(t => t.company.id))];
 
     // Carrega as primeiras 5 logos imediatamente

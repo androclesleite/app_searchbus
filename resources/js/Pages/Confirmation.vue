@@ -56,7 +56,7 @@
         <div class="border-t mt-4 pt-4">
           <div class="flex justify-between items-center mb-2">
             <span class="text-gray-600">Assentos Selecionados:</span>
-            <span class="font-bold text-lg text-blue-600">
+            <span class="font-bold text-lg text-primary-600">
               {{ selectedSeats.join(", ") }}
             </span>
           </div>
@@ -86,7 +86,7 @@
       <div class="space-y-3">
         <button
           @click="goHome"
-          class="w-full py-3.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+          class="w-full py-3.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>

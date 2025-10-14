@@ -26,7 +26,13 @@ class TripController extends Controller
 
             return Inertia::render('Trips', [
                 'trips' => $result['trips'],
-                'searchParams' => $result['searchParams']
+                'searchParams' => $result['searchParams'],
+                'cacheInfo' => [
+                    'shouldCache' => true,
+                    'from' => $request->from,
+                    'to' => $request->to,
+                    'date' => $request->data
+                ]
             ]);
         } catch (\Exception $e) {
             return Inertia::render('Trips', [
@@ -36,7 +42,8 @@ class TripController extends Controller
                     'to' => ['id' => $request->to],
                     'travelDate' => $request->data
                 ],
-                'error' => 'Erro ao buscar viagens: ' . $e->getMessage()
+                'error' => 'Erro ao buscar viagens: ' . $e->getMessage(),
+                'cacheInfo' => ['shouldCache' => false]
             ]);
         }
     }

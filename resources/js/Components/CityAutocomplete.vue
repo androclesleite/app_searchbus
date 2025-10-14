@@ -4,16 +4,26 @@
             {{ label }}
         </label>
         
-        <input
-            type="text"
-            v-model="searchQuery"
-            @input="handleInput"
-            @focus="showDropdown = true"
-            @blur="handleBlur"
-            :placeholder="placeholder"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            :class="{ 'border-red-500': error }"
-        />
+        <div class="relative">
+            <input
+                type="text"
+                v-model="searchQuery"
+                @input="handleInput"
+                @focus="handleFocus"
+                @blur="handleBlur"
+                :placeholder="placeholder"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                :class="{ 'border-red-500': error }"
+            />
+
+            <!-- Loading spinner -->
+            <div v-if="isSearching" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <svg class="animate-spin h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </div>
 
         <!-- Dropdown com resultados -->
         <div
@@ -24,7 +34,7 @@
                 v-for="stop in filteredStops"
                 :key="stop.id"
                 @mousedown.prevent="selectStop(stop)"
-                class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                class="px-4 py-3 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
             >
                 <div class="font-medium text-gray-900">{{ stop.name }}</div>
                 <div class="text-xs text-gray-500">{{ stop.type === 'station' ? 'Rodoviária' : 'Cidade' }}</div>
@@ -43,7 +53,11 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
+import { useToast } from 'vue-toastification';
 import axios from 'axios';
+
+const toast = useToast();
 
 const props = defineProps({
     label: String,
@@ -59,7 +73,7 @@ const showDropdown = ref(false);
 const stops = ref([]);
 const selectedStop = ref(null);
 const loading = ref(false);
-let debounceTimeout = null;
+const isSearching = ref(false);
 
 // Carrega todas as paradas na montagem
 const loadStops = async () => {
@@ -70,6 +84,7 @@ const loadStops = async () => {
     } catch (error) {
         console.error('Erro ao carregar paradas:', error);
         emit('error', 'Erro ao carregar cidades');
+        toast.error('Erro ao carregar lista de cidades');
     } finally {
         loading.value = false;
     }
@@ -100,26 +115,33 @@ const selectStop = async (stop) => {
         });
 
         if (!response.data.allowed) {
-            emit('error', `Apenas cidades de SP e PR são permitidas. ${stop.name} é do estado ${response.data.state}`);
+            const errorMsg = `Apenas cidades de SP e PR são permitidas. ${stop.name} é do estado ${response.data.state}`;
+            emit('error', errorMsg);
             emit('update:modelValue', null);
+            toast.warning(errorMsg);
         } else {
             emit('update:modelValue', stop.id);
             emit('select', stop);
             emit('error', null);
+            toast.success(`${stop.name} selecionada`);
         }
     } catch (error) {
         console.error('Erro ao validar parada:', error);
         emit('error', 'Erro ao validar a cidade selecionada');
+        toast.error('Erro ao validar a cidade selecionada');
     }
 };
 
+// Função debounced para mostrar dropdown (300ms delay)
+const debouncedShowDropdown = useDebounceFn(() => {
+    if (searchQuery.value.length >= 2) {
+        showDropdown.value = true;
+        isSearching.value = false;
+    }
+}, 300);
+
 // Manipula input com debounce
 const handleInput = () => {
-    // Limpa o timeout anterior
-    if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-    }
-
     // Limpa seleção se usuário está digitando
     if (selectedStop.value && searchQuery.value !== selectedStop.value.name) {
         selectedStop.value = null;
@@ -129,13 +151,23 @@ const handleInput = () => {
     // Esconde dropdown se query muito curta
     if (searchQuery.value.length < 2) {
         showDropdown.value = false;
+        isSearching.value = false;
         return;
     }
 
+    // Mostra loading enquanto espera debounce
+    isSearching.value = true;
+    showDropdown.value = false;
+
     // Aplica debounce de 300ms antes de mostrar dropdown
-    debounceTimeout = setTimeout(() => {
+    debouncedShowDropdown();
+};
+
+// Manipula focus
+const handleFocus = () => {
+    if (searchQuery.value.length >= 2) {
         showDropdown.value = true;
-    }, 300);
+    }
 };
 
 // Manipula blur (perda de foco)
